@@ -48,11 +48,17 @@ func (sr *ServiceResource) Reconcile(resourceMap ResourceMap) error {
 	actualServiceState := property.Value.String()
 
 	if actualServiceOnStart != string(sr.OnStart) && sr.OnStart == ServiceOnStartEnabled {
-		conn.EnableUnitFiles()
+		_, _, err := conn.EnableUnitFiles([]string{sr.Name + ".service"}, false, false)
+		if err != nil {
+			return err
+		}
 
 	}
 	if actualServiceOnStart != string(sr.OnStart) && sr.OnStart == ServiceOnStartDisabled {
-		conn.DisableUnitFiles()
+		_, err := conn.DisableUnitFiles([]string{sr.Name + ".service"}, false)
+		if err != nil {
+			return err
+		}
 	}
 
 	if actualServiceState != string(sr.State) && sr.State == ServiceStateRunning {
@@ -71,28 +77,29 @@ func (sr *ServiceResource) Reconcile(resourceMap ResourceMap) error {
 		}
 	}
 
-	// if we haven't started the service, we need to check to see if any of our
-	// depenencies have been mofied and if so restart
-	if !serviceStarted {
-		needsRestart := false
-		for _, resourceName := range sr.DependsOn {
-			if r, ok := resourceMap[resourceName]; ok {
-				if r.Updated() {
-					needsRestart = true
-				}
-			} else {
-				return fmt.Errorf("could not fetch resource %s from resource map", resourceName)
-			}
-		}
-
-		if needsRestart {
-			// restart the service
-			_, err := conn.RestartUnit(sr.Name, "replace", nil)
-			if err != nil {
-				return err
-			}
-		}
+	// if the service was started we can end here
+	// we do not need to check if the service's dependencies were modified
+	if serviceStarted {
+		return nil
 	}
 
+	needsRestart := false
+	for _, resourceName := range sr.DependsOn {
+		if r, ok := resourceMap[resourceName]; ok {
+			if r.Updated() {
+				needsRestart = true
+			}
+			continue
+		}
+		return fmt.Errorf("could not fetch resource %s from resource map", resourceName)
+	}
+
+	if needsRestart {
+		// restart the service
+		_, err := conn.RestartUnit(sr.Name, "replace", nil)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
