@@ -103,5 +103,10 @@ func (fr *FileResource) Reconcile(_ ResourceMap) error {
 		return err
 	}
 
+	err = f.Chmod(os.FileMode(mode))
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
