@@ -2,19 +2,15 @@ package reconciler
 
 import "slack/servertool/internal/resources"
 
-type Reconciler interface {
-	Reconcile() error
-}
-
 type ResourceReconciler struct {
 	OrderedResources resources.Resources
-	ResourceMap      *resources.ResourceMap
+	ResourceMap      resources.ResourceMap
 }
 
 func NewResourceReconciler(orderedResources resources.Resources, resourceMap resources.ResourceMap) *ResourceReconciler {
 	return &ResourceReconciler{
 		OrderedResources: orderedResources,
-		ResourceMap:      &resourceMap,
+		ResourceMap:      resourceMap,
 	}
 }
 

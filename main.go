@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"slack/servertool/internal/config"
+	"slack/servertool/internal/reconciler"
 )
 
 var (
@@ -26,6 +27,10 @@ func main() {
 		os.Exit(1)
 	}
 
-	fmt.Println(r)
-	fmt.Println(rm)
+	rr := reconciler.NewResourceReconciler(r, rm)
+	err = rr.ReconcileAll()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
 }

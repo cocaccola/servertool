@@ -3,9 +3,10 @@ package resources
 type Resource interface {
 	GetName() string
 	Updated() bool
+	Reconcile(resourceMap ResourceMap) error
 }
 
-type ResourceMap map[string]*Resource
+type ResourceMap map[string]Resource
 
 type ResourceContainer struct {
 	File     *FileResource    `json:"file,omitempty"`
@@ -36,14 +37,10 @@ func (rc *ResourceContainer) GetName() string {
 }
 
 func (rc *ResourceContainer) GetResource() Resource {
-	switch {
-	case rc.File != nil:
-		return rc.File
-	case rc.Package != nil:
-		return rc.Package
-	case rc.Service != nil:
-		return rc.Service
-	default:
-		return nil
-	}
+	rc.setResource()
+	return rc.resource
+}
+
+func (rc *ResourceContainer) Reconcile(resourceMap ResourceMap) error {
+	return rc.resource.Reconcile(resourceMap)
 }

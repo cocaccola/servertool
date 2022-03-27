@@ -4,7 +4,7 @@
       "path": "/tmp/app.php",
       "user": "caccola",
       "group": "caccola",
-      "mode": 420,
+      "mode": "0644",
       "contents": "<?php\nheader(\"Content-Type: text/plain\");\necho \"Hello, world!\\n\";\n?>\n"
     }
   },
@@ -19,8 +19,23 @@
       "path": "/tmp/app.text",
       "user": "caccola",
       "group": "caccola",
-      "mode": 420,
+      "mode": "0644",
       "contents": "Hello!"
+    }
+  },
+  {
+    "service": {
+      "name": "foobar",
+      "state": "running",
+      "onStart": "enabled",
+      "dependsOn": ["file:/tmp/app.php"]
+    }
+  },
+  {
+    "service": {
+      "name": "nginx",
+      "state": "running",
+      "onStart": "enabled"
     }
   }
 ]
