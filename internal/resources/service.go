@@ -42,9 +42,15 @@ func (sr *ServiceResource) Reconcile(resourceMap ResourceMap) error {
 	defer conn.Close()
 
 	property, err := conn.GetUnitProperty(sr.Name, "UnitFileState")
+	if err != nil {
+		return err
+	}
 	actualServiceOnStart := property.Value.String()
 
 	property, err = conn.GetUnitProperty(sr.Name, "SubState")
+	if err != nil {
+		return err
+	}
 	actualServiceState := property.Value.String()
 
 	if actualServiceOnStart != string(sr.OnStart) && sr.OnStart == ServiceOnStartEnabled {
