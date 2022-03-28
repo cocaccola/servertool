@@ -48,7 +48,7 @@ func Parse(path string) (resources.Resources, resources.ResourceMap, error) {
 		if _resource == nil {
 			return nil, nil, ErrFetchingResource
 		}
-		rm[resource.GetName()] = _resource
+		rm[name] = _resource
 	}
 	return r, rm, nil
 }

@@ -31,14 +31,19 @@ func (pr *PackageResource) Reconcile(_ ResourceMap) error {
 	// determine package state
 	cmd := exec.Command("/usr/bin/dpkg-query", "-W", pr.Name)
 	if err := cmd.Run(); err != nil {
-		if _, ok := err.(*exec.ExitError); ok {
+		if e, ok := err.(*exec.ExitError); ok && e.ExitCode() == 1 {
+			// package was not found on the system
+			actualPackageState = PackageStateAbsent
+		} else {
+			// the command ran into another kind of issue
 			return err
 		}
-		actualPackageState = PackageStateAbsent
 	} else {
+		// package is installed
 		actualPackageState = PackageStateInstalled
 	}
 
+	// the package is installed when we don't want it to be
 	if pr.State != actualPackageState && actualPackageState == PackageStateInstalled {
 		// update package database
 		cmd = exec.Command("/usr/bin/apt-get", "-y", "-q", "update")
@@ -48,7 +53,7 @@ func (pr *PackageResource) Reconcile(_ ResourceMap) error {
 		}
 
 		// install the package
-		cmd = exec.Command("/usr/bin/apt-get", "-y", "-q", "install", pr.Name)
+		cmd = exec.Command("/usr/bin/apt-get", "-y", "-q", "remove", pr.Name)
 		cmd.Env = append(cmd.Env, "DEBIAN_FRONTEND=noninteractive")
 		if err := cmd.Run(); err != nil {
 			return err
@@ -56,6 +61,7 @@ func (pr *PackageResource) Reconcile(_ ResourceMap) error {
 		pr.updated = true
 	}
 
+	// the package is not installed and we want it to be
 	if pr.State != actualPackageState && actualPackageState == PackageStateAbsent {
 		// update package database
 		cmd = exec.Command("/usr/bin/apt-get", "-y", "-q", "update")
@@ -65,7 +71,7 @@ func (pr *PackageResource) Reconcile(_ ResourceMap) error {
 		}
 
 		// remove package
-		cmd = exec.Command("/usr/bin/apt-get", "-y", "-q", "remove", pr.Name)
+		cmd = exec.Command("/usr/bin/apt-get", "-y", "-q", "install", pr.Name)
 		cmd.Env = append(cmd.Env, "DEBIAN_FRONTEND=noninteractive")
 		if err := cmd.Run(); err != nil {
 			return err

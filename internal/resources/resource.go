@@ -29,7 +29,7 @@ func (rc *ResourceContainer) setResource() {
 	}
 }
 
-type Resources []ResourceContainer
+type Resources []*ResourceContainer
 
 func (rc *ResourceContainer) GetName() string {
 	rc.setResource()
@@ -42,5 +42,6 @@ func (rc *ResourceContainer) GetResource() Resource {
 }
 
 func (rc *ResourceContainer) Reconcile(resourceMap ResourceMap) error {
+	// should probably call setResource here for safety
 	return rc.resource.Reconcile(resourceMap)
 }
