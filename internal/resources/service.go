@@ -2,6 +2,7 @@ package resources
 
 import (
 	"fmt"
+	"strings"
 
 	systemd "github.com/coreos/go-systemd/dbus"
 )
@@ -41,43 +42,51 @@ func (sr *ServiceResource) Reconcile(resourceMap ResourceMap) error {
 	}
 	defer conn.Close()
 
-	property, err := conn.GetUnitProperty(sr.Name, "UnitFileState")
+	property, err := conn.GetUnitProperty(sr.Name+".service", "UnitFileState")
 	if err != nil {
 		return err
 	}
-	actualServiceOnStart := property.Value.String()
+	actualServiceOnStart := ServiceOnStart(strings.Trim(property.Value.String(), "\""))
 
-	property, err = conn.GetUnitProperty(sr.Name, "SubState")
+	property, err = conn.GetUnitProperty(sr.Name+".service", "SubState")
 	if err != nil {
 		return err
 	}
-	actualServiceState := property.Value.String()
-
-	if actualServiceOnStart != string(sr.OnStart) && sr.OnStart == ServiceOnStartEnabled {
-		_, _, err := conn.EnableUnitFiles([]string{sr.Name + ".service"}, false, false)
-		if err != nil {
-			return err
-		}
-
+	actualServiceState := ServiceState(strings.Trim(property.Value.String(), "\""))
+	if actualServiceState == "dead" {
+		actualServiceState = ServiceStateStopped
 	}
-	if actualServiceOnStart != string(sr.OnStart) && sr.OnStart == ServiceOnStartDisabled {
+
+	// service is enabled but we don't want it to be
+	if actualServiceOnStart != sr.OnStart && actualServiceOnStart == ServiceOnStartEnabled {
 		_, err := conn.DisableUnitFiles([]string{sr.Name + ".service"}, false)
 		if err != nil {
 			return err
 		}
 	}
 
-	if actualServiceState != string(sr.State) && sr.State == ServiceStateRunning {
+	// service is disabled but we don't want it to be
+	if actualServiceOnStart != sr.OnStart && actualServiceOnStart == ServiceOnStartDisabled {
+		_, _, err := conn.EnableUnitFiles([]string{sr.Name + ".service"}, false, false)
+		if err != nil {
+			return err
+		}
+	}
+
+	// service is running but we don't want it to be
+	if actualServiceState != sr.State && actualServiceState == ServiceStateRunning {
 		// start service
-		_, err := conn.StartUnit(sr.Name, "replace", nil)
+		_, err := conn.StopUnit(sr.Name+".service", "replace", nil)
 		if err != nil {
 			return err
 		}
 		serviceStarted = true
 	}
-	if actualServiceState != string(sr.State) && sr.State == ServiceStateStopped {
+
+	// service is stopped but we don't want it to be
+	if actualServiceState != sr.State && actualServiceState == ServiceStateStopped {
 		// stop service
-		_, err := conn.StopUnit(sr.Name, "replace", nil)
+		_, err := conn.StartUnit(sr.Name+".service", "replace", nil)
 		if err != nil {
 			return err
 		}
@@ -102,7 +111,7 @@ func (sr *ServiceResource) Reconcile(resourceMap ResourceMap) error {
 
 	if needsRestart {
 		// restart the service
-		_, err := conn.RestartUnit(sr.Name, "replace", nil)
+		_, err := conn.RestartUnit(sr.Name+".service", "replace", nil)
 		if err != nil {
 			return err
 		}

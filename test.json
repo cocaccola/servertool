@@ -1,17 +1,34 @@
 [
-    {
-      "file": {
-        "path": "/tmp/app.php",
-        "user": "caccola",
-        "group": "caccola",
-        "mode": "0644",
-        "contents": "<?php\nheader(\"Content-Type: text/plain\");\necho \"Hello, world!\\n\";\n?>\n"
-      }
-    },
-    {
-      "package": {
-        "name": "tree",
-        "state": "absent"
-      }
+  {
+    "file": {
+      "path": "/tmp/app.php",
+      "user": "caccola",
+      "group": "caccola",
+      "mode": "0644",
+      "contents": "<?php\nheader(\"Content-Type: text/plain\");\necho \"Hello, world!\\n\";\n?>\n"
     }
+  },
+  {
+    "package": {
+      "name": "tree",
+      "state": "installed"
+    }
+  },
+  {
+    "package": {
+      "name": "nginx",
+      "state": "installed"
+    }
+  },
+  {
+    "service": {
+      "name": "nginx",
+      "state": "running",
+      "onStart": "enabled",
+      "dependsOn": [
+        "file:/tmp/app.php",
+        "package:nginx"
+      ]
+    }
+  }
 ]

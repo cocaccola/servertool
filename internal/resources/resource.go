@@ -42,6 +42,6 @@ func (rc *ResourceContainer) GetResource() Resource {
 }
 
 func (rc *ResourceContainer) Reconcile(resourceMap ResourceMap) error {
-	// should probably call setResource here for safety
+	rc.setResource()
 	return rc.resource.Reconcile(resourceMap)
 }
