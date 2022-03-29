@@ -41,7 +41,10 @@ func (fr *FileResource) Reconcile(_ ResourceMap) error {
 		var pathErr *os.PathError
 		err := os.Remove(fr.Path)
 		if errors.As(err, &pathErr) {
-			return fmt.Errorf("could not remove file Err: %s Op: %s Path: %s", pathErr.Err, pathErr.Op, pathErr.Path)
+			if pathErr.Err.Error() == "no such file or directory" {
+				return nil
+			}
+			return fmt.Errorf("could not remove file %s: %w", pathErr.Path, pathErr.Err)
 		}
 		if err != nil {
 			return fmt.Errorf("could not remove file %s: %w", fr.Path, err)
