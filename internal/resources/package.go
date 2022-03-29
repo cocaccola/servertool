@@ -3,6 +3,7 @@ package resources
 import (
 	"errors"
 	"fmt"
+	"os"
 	"os/exec"
 )
 
@@ -32,6 +33,7 @@ func (pr *PackageResource) Reconcile(_ ResourceMap) error {
 
 	// determine package state
 	cmd := exec.Command("/usr/bin/dpkg-query", "-W", pr.Name)
+	cmd.Env = os.Environ()
 	if err := cmd.Run(); err != nil {
 		var exitErr *exec.ExitError
 		if ok := errors.As(err, &exitErr); ok && exitErr.ExitCode() == 1 {
@@ -52,14 +54,14 @@ func (pr *PackageResource) Reconcile(_ ResourceMap) error {
 	if pr.State != actualPackageState && actualPackageState == PackageStateInstalled {
 		// update package database
 		cmd = exec.Command("/usr/bin/apt-get", "-y", "-q", "update")
-		cmd.Env = append(cmd.Env, "DEBIAN_FRONTEND=noninteractive")
+		cmd.Env = append(os.Environ(), "DEBIAN_FRONTEND=noninteractive")
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("could not update package database: %w", err)
 		}
 
 		// install the package
 		cmd = exec.Command("/usr/bin/apt-get", "-y", "-q", "remove", pr.Name)
-		cmd.Env = append(cmd.Env, "DEBIAN_FRONTEND=noninteractive")
+		cmd.Env = append(os.Environ(), "DEBIAN_FRONTEND=noninteractive")
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("could not remove package %s: %w", pr.Name, err)
 		}
@@ -70,14 +72,14 @@ func (pr *PackageResource) Reconcile(_ ResourceMap) error {
 	if pr.State != actualPackageState && actualPackageState == PackageStateAbsent {
 		// update package database
 		cmd = exec.Command("/usr/bin/apt-get", "-y", "-q", "update")
-		cmd.Env = append(cmd.Env, "DEBIAN_FRONTEND=noninteractive")
+		cmd.Env = append(os.Environ(), "DEBIAN_FRONTEND=noninteractive")
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("could not update package database: %w", err)
 		}
 
 		// remove package
 		cmd = exec.Command("/usr/bin/apt-get", "-y", "-q", "install", pr.Name)
-		cmd.Env = append(cmd.Env, "DEBIAN_FRONTEND=noninteractive")
+		cmd.Env = append(os.Environ(), "DEBIAN_FRONTEND=noninteractive")
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("could not install package %s: %w", pr.Name, err)
 		}
