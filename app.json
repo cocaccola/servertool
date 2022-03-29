@@ -1,14 +1,5 @@
 [
   {
-    "file": {
-      "path": "/var/www/html/index.php",
-      "user": "root",
-      "group": "root",
-      "mode": "0644",
-      "contents": "<?php\nheader(\"Content-Type: text/plain\");\necho \"Hello, world!\\n\";\n?>\n"
-    }
-  },
-  {
     "package": {
       "name": "apache2",
       "state": "installed"
@@ -18,6 +9,22 @@
     "package": {
       "name": "libapache2-mod-php",
       "state": "installed"
+    }
+  },
+  {
+    "file": {
+      "ensure": "absent",
+      "path": "/var/www/html/index.html"
+    }
+  },
+  {
+    "file": {
+      "ensure": "present",
+      "path": "/var/www/html/index.php",
+      "user": "root",
+      "group": "root",
+      "mode": "0644",
+      "contents": "<?php\nheader(\"Content-Type: text/plain\");\necho \"Hello, world!\\n\";\n?>\n"
     }
   },
   {

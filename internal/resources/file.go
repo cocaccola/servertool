@@ -11,13 +11,21 @@ import (
 	"strconv"
 )
 
+type FileEnsure string
+
+const (
+	FileEnsurePresent FileEnsure = "present"
+	FileEnsureAbsent  FileEnsure = "absent"
+)
+
 type FileResource struct {
-	Path     string `json:"path"`
-	User     string `json:"user"`
-	Group    string `json:"group"`
-	Mode     string `json:"mode"`
-	Contents string `json:"contents"`
-	updated  bool   `json:"-"`
+	Ensure   FileEnsure `json:"ensure"`
+	Path     string     `json:"path"`
+	User     string     `json:"user"`
+	Group    string     `json:"group"`
+	Mode     string     `json:"mode"`
+	Contents string     `json:"contents"`
+	updated  bool       `json:"-"`
 }
 
 func (fr *FileResource) GetName() string {
@@ -29,6 +37,13 @@ func (fr *FileResource) Updated() bool {
 }
 
 func (fr *FileResource) Reconcile(_ ResourceMap) error {
+	if fr.Ensure == FileEnsureAbsent {
+		if err := os.Remove(fr.Path); err != nil {
+			return err
+		}
+		return nil
+	}
+
 	needsUpdate := false
 
 	// check that the file has the correct contents
