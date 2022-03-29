@@ -1,6 +1,8 @@
 package resources
 
 import (
+	"errors"
+	"fmt"
 	"os/exec"
 )
 
@@ -31,15 +33,18 @@ func (pr *PackageResource) Reconcile(_ ResourceMap) error {
 	// determine package state
 	cmd := exec.Command("/usr/bin/dpkg-query", "-W", pr.Name)
 	if err := cmd.Run(); err != nil {
-		if e, ok := err.(*exec.ExitError); ok && e.ExitCode() == 1 {
-			// package was not found on the system
+		var exitErr *exec.ExitError
+		if ok := errors.As(err, &exitErr); ok && exitErr.ExitCode() == 1 {
+			// the package is not installed
 			actualPackageState = PackageStateAbsent
 		} else {
-			// the command ran into another kind of issue
-			return err
+			// some other error happened
+			return fmt.Errorf("could not query package database: %w", err)
 		}
-	} else {
-		// package is installed
+	}
+
+	// the above command ran cleanly, so the package is installed
+	if actualPackageState != PackageStateAbsent {
 		actualPackageState = PackageStateInstalled
 	}
 
@@ -49,14 +54,14 @@ func (pr *PackageResource) Reconcile(_ ResourceMap) error {
 		cmd = exec.Command("/usr/bin/apt-get", "-y", "-q", "update")
 		cmd.Env = append(cmd.Env, "DEBIAN_FRONTEND=noninteractive")
 		if err := cmd.Run(); err != nil {
-			return err
+			return fmt.Errorf("could not update package database: %w", err)
 		}
 
 		// install the package
 		cmd = exec.Command("/usr/bin/apt-get", "-y", "-q", "remove", pr.Name)
 		cmd.Env = append(cmd.Env, "DEBIAN_FRONTEND=noninteractive")
 		if err := cmd.Run(); err != nil {
-			return err
+			return fmt.Errorf("could not remove package %s: %w", pr.Name, err)
 		}
 		pr.updated = true
 	}
@@ -67,14 +72,14 @@ func (pr *PackageResource) Reconcile(_ ResourceMap) error {
 		cmd = exec.Command("/usr/bin/apt-get", "-y", "-q", "update")
 		cmd.Env = append(cmd.Env, "DEBIAN_FRONTEND=noninteractive")
 		if err := cmd.Run(); err != nil {
-			return err
+			return fmt.Errorf("could not update package database: %w", err)
 		}
 
 		// remove package
 		cmd = exec.Command("/usr/bin/apt-get", "-y", "-q", "install", pr.Name)
 		cmd.Env = append(cmd.Env, "DEBIAN_FRONTEND=noninteractive")
 		if err := cmd.Run(); err != nil {
-			return err
+			return fmt.Errorf("could not install package %s: %w", pr.Name, err)
 		}
 		pr.updated = true
 	}

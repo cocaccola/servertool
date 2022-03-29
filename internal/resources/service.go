@@ -38,19 +38,19 @@ func (sr *ServiceResource) Reconcile(resourceMap ResourceMap) error {
 
 	conn, err := systemd.New()
 	if err != nil {
-		return err
+		return fmt.Errorf("could not establish connection to systemd via dbus: %w", err)
 	}
 	defer conn.Close()
 
 	property, err := conn.GetUnitProperty(sr.Name+".service", "UnitFileState")
 	if err != nil {
-		return err
+		return fmt.Errorf("could not get unit startup information: %w", err)
 	}
 	actualServiceOnStart := ServiceOnStart(strings.Trim(property.Value.String(), "\""))
 
 	property, err = conn.GetUnitProperty(sr.Name+".service", "SubState")
 	if err != nil {
-		return err
+		return fmt.Errorf("could not get unit status: %w", err)
 	}
 	actualServiceState := ServiceState(strings.Trim(property.Value.String(), "\""))
 	if actualServiceState == "dead" {
@@ -61,7 +61,7 @@ func (sr *ServiceResource) Reconcile(resourceMap ResourceMap) error {
 	if actualServiceOnStart != sr.OnStart && actualServiceOnStart == ServiceOnStartEnabled {
 		_, err := conn.DisableUnitFiles([]string{sr.Name + ".service"}, false)
 		if err != nil {
-			return err
+			return fmt.Errorf("could not disable unit %s: %w", sr.Name, err)
 		}
 	}
 
@@ -69,7 +69,7 @@ func (sr *ServiceResource) Reconcile(resourceMap ResourceMap) error {
 	if actualServiceOnStart != sr.OnStart && actualServiceOnStart == ServiceOnStartDisabled {
 		_, _, err := conn.EnableUnitFiles([]string{sr.Name + ".service"}, false, false)
 		if err != nil {
-			return err
+			return fmt.Errorf("could not enable unit %s: %w", sr.Name, err)
 		}
 	}
 
@@ -78,7 +78,7 @@ func (sr *ServiceResource) Reconcile(resourceMap ResourceMap) error {
 		// start service
 		_, err := conn.StopUnit(sr.Name+".service", "replace", nil)
 		if err != nil {
-			return err
+			return fmt.Errorf("could not stop unit %s: %w", sr.Name, err)
 		}
 		serviceStarted = true
 	}
@@ -88,7 +88,7 @@ func (sr *ServiceResource) Reconcile(resourceMap ResourceMap) error {
 		// stop service
 		_, err := conn.StartUnit(sr.Name+".service", "replace", nil)
 		if err != nil {
-			return err
+			return fmt.Errorf("could not start unit %s: %w", sr.Name, err)
 		}
 	}
 
@@ -113,7 +113,7 @@ func (sr *ServiceResource) Reconcile(resourceMap ResourceMap) error {
 		// restart the service
 		_, err := conn.RestartUnit(sr.Name+".service", "replace", nil)
 		if err != nil {
-			return err
+			return fmt.Errorf("could not restart service %s: %w", sr.Name, err)
 		}
 	}
 	return nil
