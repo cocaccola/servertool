@@ -63,6 +63,7 @@ func (sr *ServiceResource) Reconcile(resourceMap ResourceMap) error {
 		if err != nil {
 			return fmt.Errorf("could not disable unit %s: %w", sr.Name, err)
 		}
+		fmt.Printf("disabled service %s\n", sr.Name)
 	}
 
 	// service is disabled but we don't want it to be
@@ -71,6 +72,7 @@ func (sr *ServiceResource) Reconcile(resourceMap ResourceMap) error {
 		if err != nil {
 			return fmt.Errorf("could not enable unit %s: %w", sr.Name, err)
 		}
+		fmt.Printf("enabled service %s\n", sr.Name)
 	}
 
 	// service is running but we don't want it to be
@@ -80,7 +82,7 @@ func (sr *ServiceResource) Reconcile(resourceMap ResourceMap) error {
 		if err != nil {
 			return fmt.Errorf("could not stop unit %s: %w", sr.Name, err)
 		}
-		serviceStarted = true
+		fmt.Printf("stopped service %s\n", sr.Name)
 	}
 
 	// service is stopped but we don't want it to be
@@ -90,6 +92,8 @@ func (sr *ServiceResource) Reconcile(resourceMap ResourceMap) error {
 		if err != nil {
 			return fmt.Errorf("could not start unit %s: %w", sr.Name, err)
 		}
+		serviceStarted = true
+		fmt.Printf("started service %s\n", sr.Name)
 	}
 
 	// if the service was started we can end here
@@ -115,6 +119,7 @@ func (sr *ServiceResource) Reconcile(resourceMap ResourceMap) error {
 		if err != nil {
 			return fmt.Errorf("could not restart service %s: %w", sr.Name, err)
 		}
+		fmt.Printf("restarted service %s\n", sr.Name)
 	}
 	return nil
 }

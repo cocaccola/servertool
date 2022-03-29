@@ -49,6 +49,7 @@ func (fr *FileResource) Reconcile(_ ResourceMap) error {
 		if err != nil {
 			return fmt.Errorf("could not remove file %s: %w", fr.Path, err)
 		}
+		fmt.Printf("removed file %s\n", fr.Path)
 		return nil
 	}
 
@@ -95,6 +96,7 @@ func (fr *FileResource) Reconcile(_ ResourceMap) error {
 		fr.updated = true
 
 		f.Close()
+		fmt.Printf("created / updated file %s\n", fr.Path)
 	}
 
 	// lazily enforce the desired owners and permissions

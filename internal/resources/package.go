@@ -59,13 +59,14 @@ func (pr *PackageResource) Reconcile(_ ResourceMap) error {
 			return fmt.Errorf("could not update package database: %w", err)
 		}
 
-		// install the package
+		// remove the package
 		cmd = exec.Command("/usr/bin/apt-get", "-y", "-q", "remove", pr.Name)
 		cmd.Env = append(os.Environ(), "DEBIAN_FRONTEND=noninteractive")
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("could not remove package %s: %w", pr.Name, err)
 		}
 		pr.updated = true
+		fmt.Printf("removed package %s\n", pr.Name)
 	}
 
 	// the package is not installed and we want it to be
@@ -77,13 +78,14 @@ func (pr *PackageResource) Reconcile(_ ResourceMap) error {
 			return fmt.Errorf("could not update package database: %w", err)
 		}
 
-		// remove package
+		// install the package
 		cmd = exec.Command("/usr/bin/apt-get", "-y", "-q", "install", pr.Name)
 		cmd.Env = append(os.Environ(), "DEBIAN_FRONTEND=noninteractive")
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("could not install package %s: %w", pr.Name, err)
 		}
 		pr.updated = true
+		fmt.Printf("installed package %s\n", pr.Name)
 	}
 
 	return nil
