@@ -38,8 +38,13 @@ func (fr *FileResource) Updated() bool {
 
 func (fr *FileResource) Reconcile(_ ResourceMap) error {
 	if fr.Ensure == FileEnsureAbsent {
-		if err := os.Remove(fr.Path); err != nil {
-			return err
+		var pathErr *os.PathError
+		err := os.Remove(fr.Path)
+		if errors.As(err, &pathErr) {
+			return fmt.Errorf("could not remove file Err: %s Op: %s Path: %s", pathErr.Err, pathErr.Op, pathErr.Path)
+		}
+		if err != nil {
+			return fmt.Errorf("could not remove file %s: %w", fr.Path, err)
 		}
 		return nil
 	}
