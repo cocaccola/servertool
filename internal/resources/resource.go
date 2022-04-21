@@ -6,6 +6,8 @@ type Resource interface {
 	Reconcile(resourceMap ResourceMap) error
 }
 
+type Resources []*ResourceContainer
+
 type ResourceMap map[string]Resource
 
 type ResourceContainer struct {
@@ -28,8 +30,6 @@ func (rc *ResourceContainer) setResource() {
 		rc.resource = rc.Service
 	}
 }
-
-type Resources []*ResourceContainer
 
 func (rc *ResourceContainer) GetName() string {
 	rc.setResource()

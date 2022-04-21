@@ -18,6 +18,7 @@ func main() {
 
 	if *ConfigFile == "" {
 		fmt.Fprintln(os.Stderr, "please supply a path to a config file")
+		flag.PrintDefaults()
 		os.Exit(2)
 	}
 
